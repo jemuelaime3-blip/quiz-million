@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz Million – Jeu de culture générale</title>
+<meta name="description" content="Réponds à 15 questions de culture générale et gagne un million de points !">
+<!-- ÉTAPE ADSENSE : après approbation, colle ici ton script (remplace ca-pub-XXXXXXXXXXXXXXXX)
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+-->
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#1b2a8f,#050816 70%);color:#fff;font-family:system-ui,Arial,sans-serif;display:flex;justify-content:center}
+#app{width:100%;max-width:480px;padding:12px;display:flex;flex-direction:column;gap:12px}
+.ad{min-height:60px;border:1px dashed #6b7bd6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#9aa6e8}
+h1{text-align:center;margin:8px 0;font-size:28px}
+.card{background:rgba(10,20,90,.7);border:2px solid #7f9cff;border-radius:20px;padding:18px;text-align:center}
+.q{font-size:20px;font-weight:700;line-height:1.3}
+.top{display:flex;justify-content:space-between;font-size:14px;color:#cfd6ff}
+.gain{color:#ffd54a;font-weight:700}
+.opt{width:100%;margin-top:10px;padding:14px;border-radius:30px;border:2px solid #7f9cff;background:#16227a;color:#fff;font-size:17px;text-align:left;cursor:pointer}
+.opt:disabled{opacity:.35}
+.opt.ok{background:#1fa83c;border-color:#7dff9a;opacity:1}
+.opt.ko{background:#c62828;border-color:#ff8a80;opacity:1}
+.btn{padding:14px 22px;border:0;border-radius:30px;background:#ffd54a;color:#222;font-weight:700;font-size:17px;cursor:pointer;margin-top:12px}
+.btn.sec{background:#3a4bb8;color:#fff}
+.bar{height:8px;background:#26338f;border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:#ffd54a;width:100%}
+.big{font-size:38px;color:#ffd54a;font-weight:800;margin:8px 0}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- PUB HAUT : remplace ce bloc par ton bloc d'annonce AdSense -->
+  <div class="ad" id="adTop">Espace publicitaire (haut)</div>
+  <div id="game"></div>
+  <!-- PUB BAS : remplace ce bloc par ton bloc d'annonce AdSense -->
+  <div class="ad" id="adBottom">Espace publicitaire (bas)</div>
+</div>
+<script>
+const LADDER=[100,200,300,500,1000,2000,4000,8000,16000,32000,64000,125000,250000,500000,1000000];
+const SAFE=[4,9];
+const QS=[
+["Quelle est la capitale de la France ?",["Lyon","Paris","Marseille","Nice"],1],
+["Combien y a-t-il de jours dans une semaine ?",["5","6","7","8"],2],
+["La banane est un…",["Fruit","Légume","Noix","Champignon"],0],
+["Quelle est la capitale officielle du Bénin ?",["Cotonou","Parakou","Abomey","Porto-Novo"],3],
+["Quel est le plus grand océan ?",["Atlantique","Pacifique","Indien","Arctique"],1],
+["Quelle est la capitale de l'Espagne ?",["Barcelone","Séville","Madrid","Valence"],2],
+["Quelle planète est surnommée la planète rouge ?",["Vénus","Mars","Jupiter","Mercure"],1],
+["Quelle est la langue officielle du Brésil ?",["Espagnol","Anglais","Français","Portugais"],3],
+["Quel est le symbole chimique de l'or ?",["Ag","Fe","Au","Or"],2],
+["Combien y a-t-il de continents (modèle courant) ?",["5","6","7","9"],2],
+["Qui a écrit « Don Quichotte » ?",["Cervantès","Molière","Victor Hugo","Borges"],0],
+["Quel est le plus long fleuve d'Afrique ?",["Congo","Niger","Zambèze","Nil"],3],
+["Où s'est tenue la Coupe du monde de football 2010 ?",["Brésil","Afrique du Sud","Allemagne","Qatar"],1],
+["Quel est l'os le plus long du corps humain ?",["Tibia","Humérus","Fémur","Radius"],2],
+["Quel est le plus petit pays du monde ?",["Monaco","Vatican","Saint-Marin","Malte"],1]
+];
+const $=document.getElementById('game');
+let i,locked,used50;
+const fmt=n=>n.toLocaleString('fr-FR');
+function shuffle(a){for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+function home(){
+  $.innerHTML=`<h1>🎯 Quiz Million</h1><div class="card"><p class="q">15 questions.<br>1 000 000 de points à gagner !</p><p>Réponds juste pour monter l'échelle des gains.</p><button class="btn" onclick="start()">▶ Jouer</button></div>`;
+}
+function start(){i=0;used50=false;show()}
+function show(){
+  locked=false;
+  const [q,opts,ans]=QS[i];
+  const list=shuffle(opts.map((t,k)=>({t,ok:k===ans})));
+  window._list=list;
+  $.innerHTML=`<div class="top"><span>Question ${i+1}/15</span><span class="gain">${fmt(LADDER[i])} pts</span></div>
+  <div class="bar"><i style="width:${(i+1)/15*100}%"></i></div>
+  <div class="card" style="margin-top:12px"><div class="q">${q}</div></div>
+  <div id="opts">${list.map((o,k)=>`<button class="opt" onclick="pick(${k})">${'ABCD'[k]} : ${o.t}</button>`).join('')}</div>
+  <div style="text-align:center"><button class="btn sec" id="b50" onclick="fifty()" ${used50?'disabled':''}>50/50</button>
+  <button class="btn sec" onclick="quit()">💰 Abandonner</button></div>`;
+}
+function fifty(){
+  if(used50||locked)return;used50=true;
+  const wrong=window._list.map((o,k)=>k).filter(k=>!window._list[k].ok);
+  shuffle(wrong).slice(0,2).forEach(k=>document.querySelectorAll('.opt')[k].disabled=true);
+  document.getElementById('b50').disabled=true;
+}
+function pick(k){
+  if(locked)return;locked=true;
+  const btns=document.querySelectorAll('.opt');
+  const good=window._list.findIndex(o=>o.ok);
+  btns[good].classList.add('ok');
+  if(k===good){
+    setTimeout(()=>{i++;if(i>=15)end(LADDER[14],true);else show()},1100);
+  }else{
+    btns[k].classList.add('ko');
+    setTimeout(()=>end(safeGain(),false),1400);
+  }
+}
+function safeGain(){let g=0;SAFE.forEach(s=>{if(i>s)g=LADDER[s]});return g}
+function quit(){end(i>0?LADDER[i-1]:0,false,true)}
+function end(g,win,quitted){
+  $.innerHTML=`<div class="card"><h1>${win?'🏆 Bravo, millionnaire !':quitted?'Tu repars avec :':'Fin de partie'}</h1>
+  <div class="big">${fmt(g)} pts</div>
+  <p>${win?'Tu as répondu à toutes les questions !':quitted?'Bien joué, tu as su t\'arrêter.':'Mauvaise réponse… mais tu gardes ton dernier palier.'}</p>
+  <button class="btn" onclick="start()">🔁 Rejouer</button></div>`;
+}
+home();
+</script>
+</body>
+</html>
